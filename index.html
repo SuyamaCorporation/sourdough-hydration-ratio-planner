@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>サワードウ水分量比率プランナー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    input[type=range] { accent-color: #92400e; }
+    .radio-label input:checked + span { background:#92400e; color:#fff; }
+    .timeline-line { border-left: 3px solid #d97706; margin-left: 1.25rem; }
+    .saved-recipe:hover { background:#fef3c7; }
+  </style>
+</head>
+<body class="bg-yellow-50 min-h-screen">
+  <header class="bg-amber-900 text-white py-4 px-4 shadow">
+    <h1 class="text-xl font-bold">🍞 サワードウ 水分量比率プランナー</h1>
+    <p class="text-sm mt-1 opacity-90">小麦粉・スターター活性・目標食感 → 最適レシピ自動計算</p>
+  </header>
+
+  <div class="max-w-5xl mx-auto px-4 py-6 grid md:grid-cols-2 gap-6">
+    <!-- Inputs -->
+    <section class="bg-white rounded-xl shadow p-5 flex flex-col gap-5">
+      <h2 class="text-base font-bold text-amber-900 border-b border-amber-100 pb-2">材料・条件設定</h2>
+
+      <!-- Flour weight -->
+      <div>
+        <label for="flour-weight" class="block text-sm font-medium text-gray-700 mb-1">小麦粉の重量 (g)</label>
+        <input type="number" id="flour-weight" min="100" max="5000" value="500" class="border border-gray-300 rounded px-3 py-2 w-full text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none" />
+      </div>
+
+      <!-- Flour type -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">小麦粉の種類</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="flour-type" value="strong" checked class="accent-amber-700" />
+            <span class="text-sm text-gray-700">強力粉</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="flour-type" value="whole" class="accent-amber-700" />
+            <span class="text-sm text-gray-700">全粒粉</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="flour-type" value="rye" class="accent-amber-700" />
+            <span class="text-sm text-gray-700">ライ麦</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="flour-type" value="blend" class="accent-amber-700" />
+            <span class="text-sm text-gray-700">ブレンド</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Starter activity -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">スターター活性度</label>
+        <div class="flex gap-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="starter-activity" value="low" class="accent-amber-700" />
+            <span class="text-sm text-gray-700">低</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="starter-activity" value="mid" checked class="accent-amber-700" />
+            <span class="text-sm text-gray-700">中</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="starter-activity" value="high" class="accent-amber-700" />
+            <span class="text-sm text-gray-700">高</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Target crumb -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">目標食感</label>
+        <div class="flex gap-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="target-crumb" value="chewy" checked class="accent-amber-700" />
+            <span class="text-sm text-gray-700">もちもち</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="target-crumb" value="light" class="accent-amber-700" />
+            <span class="text-sm text-gray-700">軽い</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="target-crumb" value="dense" class="accent-amber-700" />
+            <span class="text-sm text-gray-700">しっかり</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Ferment temp -->
+      <div>
+        <div class="flex justify-between mb-1">
+          <label for="temp-slider" class="text-sm font-medium text-gray-700">発酵温度</label>
+          <span id="temp-val" class="text-amber-700 font-bold text-sm">24°C</span>
+        </div>
+        <input type="range" id="temp-slider" min="15" max="32" value="24" class="w-full" />
+        <div class="flex justify-between text-xs text-gray-400 mt-1"><span>15°C</span><span>32°C</span></div>
+      </div>
+
+      <!-- Start time -->
+      <div>
+        <label for="start-time" class="block text-sm font-medium text-gray-700 mb-1">開始時刻</label>
+        <input type="time" id="start-time" value="09:00" class="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none" />
+      </div>
+    </section>
+
+    <!-- Results -->
+    <div class="flex flex-col gap-5">
+      <!-- Recipe card -->
+      <section class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-base font-bold text-amber-900 border-b border-amber-100 pb-2 mb-4">レシピ（ベーカーズパーセント）</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-amber-50 rounded-lg p-3 text-center">
+            <div class="text-2xl font-bold text-amber-700" id="res-hydration">75%</div>
+            <div class="text-xs text-gray-500 mt-1">加水率</div>
+          </div>
+          <div class="bg-blue-50 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-blue-700" id="res-water">375g</div>
+            <div class="text-xs text-gray-500 mt-1">水の重量</div>
+          </div>
+          <div class="bg-green-50 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-green-700" id="res-salt">10g</div>
+            <div class="text-xs text-gray-500 mt-1">塩（2%）</div>
+          </div>
+          <div class="bg-orange-50 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-orange-700" id="res-starter">100g</div>
+            <div class="text-xs text-gray-500 mt-1">スターター（20%）</div>
+          </div>
+          <div class="bg-purple-50 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-purple-700" id="res-autolyse">30分</div>
+            <div class="text-xs text-gray-500 mt-1">オートリーズ</div>
+          </div>
+          <div class="bg-red-50 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-red-700" id="res-bulk">5h</div>
+            <div class="text-xs text-gray-500 mt-1">バルク発酵</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <section class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-base font-bold text-amber-900 mb-3">工程スケジュール</h2>
+        <div id="timeline" class="flex flex-col gap-0"></div>
+      </section>
+
+      <!-- Save/Load -->
+      <section class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-base font-bold text-amber-900 mb-3">レシピ保存・読込</h2>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="recipe-name" placeholder="レシピ名..." class="border border-gray-300 rounded px-3 py-2 text-sm flex-1 focus:ring-2 focus:ring-amber-400 focus:outline-none" />
+          <button id="save-recipe" class="bg-amber-700 text-white text-sm px-4 py-2 rounded hover:bg-amber-800 transition">保存</button>
+        </div>
+        <div id="saved-list" class="flex flex-col gap-2"></div>
+      </section>
+    </div>
+  </div>
+
+<script>
+const FLOUR_HYDRATION = { strong: 72, whole: 80, rye: 85, blend: 76 };
+const CRUMB_ADJUST    = { chewy: 5, light: -2, dense: -8 };
+const ACTIVITY_BULK   = { low: 1.5, mid: 1.0, high: 0.7 };
+const FLOUR_AUTOLYSE  = { strong: 20, whole: 40, rye: 10, blend: 25 };
+
+function getInputs() {
+  const flour = parseInt(document.getElementById('flour-weight').value) || 500;
+  const flourType = document.querySelector('input[name="flour-type"]:checked').value;
+  const activity  = document.querySelector('input[name="starter-activity"]:checked').value;
+  const crumb     = document.querySelector('input[name="target-crumb"]:checked').value;
+  const temp      = parseInt(document.getElementById('temp-slider').value);
+  return { flour, flourType, activity, crumb, temp };
+}
+
+function formatTime(startHHMM, addMinutes) {
+  const [hh, mm] = startHHMM.split(':').map(Number);
+  const totalMins = hh * 60 + mm + addMinutes;
+  const nh = Math.floor(totalMins / 60) % 24;
+  const nm = totalMins % 60;
+  return String(nh).padStart(2,'0') + ':' + String(nm).padStart(2,'0');
+}
+
+function compute() {
+  const { flour, flourType, activity, crumb, temp } = getInputs();
+  document.getElementById('temp-val').textContent = temp + '°C';
+
+  const baseHydration = FLOUR_HYDRATION[flourType] + CRUMB_ADJUST[crumb];
+  const hydration = Math.max(55, Math.min(100, baseHydration));
+  const water = Math.round(flour * hydration / 100);
+  const salt  = Math.round(flour * 0.02);
+  const starter = Math.round(flour * 0.20);
+  const autolyse = FLOUR_AUTOLYSE[flourType];
+
+  // Bulk ferment: base 5h at 24°C, adjust for temp and activity
+  const tempFactor = Math.pow(0.85, (temp - 24) / 2);
+  const bulkH = Math.max(2, Math.min(14, Math.round(5 * tempFactor * ACTIVITY_BULK[activity] * 10) / 10));
+  const finalProof = Math.round(bulkH * 0.6 * 10) / 10;
+
+  document.getElementById('res-hydration').textContent = hydration + '%';
+  document.getElementById('res-water').textContent = water + 'g';
+  document.getElementById('res-salt').textContent = salt + 'g';
+  document.getElementById('res-starter').textContent = starter + 'g';
+  document.getElementById('res-autolyse').textContent = autolyse + '分';
+  document.getElementById('res-bulk').textContent = bulkH + 'h';
+
+  buildTimeline(autolyse, bulkH, finalProof);
+}
+
+function buildTimeline(autolyseMin, bulkH, finalProofH) {
+  const startTime = document.getElementById('start-time').value || '09:00';
+  const bulkMin = Math.round(bulkH * 60);
+  const finalMin = Math.round(finalProofH * 60);
+  const foldIntervalMin = 30;
+  const foldCount = Math.min(4, Math.floor(bulkMin / 60));
+
+  const steps = [];
+  let cursor = 0;
+  steps.push({ label: '材料混合・オートリーズ開始', duration: autolyseMin });
+  cursor += autolyseMin;
+  steps.push({ label: 'スターター＋塩を加え、バルク発酵開始', duration: 0 });
+  for (let i = 1; i <= foldCount; i++) {
+    steps.push({ label: `折り畳み #${i}（ストレッチ＆フォールド）`, duration: foldIntervalMin });
+    cursor += foldIntervalMin;
+  }
+  steps.push({ label: 'バルク発酵完了・整形', duration: 20 });
+  cursor += 20;
+  steps.push({ label: '最終発酵（冷蔵 or 室温）', duration: finalMin });
+  cursor += finalMin;
+  steps.push({ label: 'クープ入れ・焼成開始（230°C予熱）', duration: 0 });
+
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  let runningMin = 0;
+
+  steps.forEach((step, idx) => {
+    const timeStr = formatTime(startTime, runningMin);
+
+    const row = document.createElement('div');
+    row.className = 'flex items-start gap-3 pb-3 relative';
+
+    const dotCol = document.createElement('div');
+    dotCol.className = 'flex flex-col items-center';
+    const dot = document.createElement('div');
+    dot.className = 'w-4 h-4 rounded-full bg-amber-500 flex-shrink-0 mt-1 z-10';
+    const line = document.createElement('div');
+    line.className = 'w-0.5 bg-amber-200 flex-1 mt-1';
+    if (idx < steps.length - 1) line.style.minHeight = '24px';
+    dotCol.appendChild(dot);
+    if (idx < steps.length - 1) dotCol.appendChild(line);
+
+    const content = document.createElement('div');
+    const timeEl = document.createElement('div');
+    timeEl.className = 'text-xs font-bold text-amber-700';
+    timeEl.textContent = timeStr;
+    const labelEl = document.createElement('div');
+    labelEl.className = 'text-sm text-gray-800';
+    labelEl.textContent = step.label;
+    if (step.duration > 0) {
+      const durEl = document.createElement('div');
+      durEl.className = 'text-xs text-gray-400 mt-0.5';
+      durEl.textContent = step.duration >= 60
+        ? `（${Math.round(step.duration/60*10)/10}時間）`
+        : `（${step.duration}分）`;
+      content.appendChild(durEl);
+    }
+    content.insertBefore(labelEl, content.firstChild);
+    content.insertBefore(timeEl, content.firstChild);
+
+    row.appendChild(dotCol);
+    row.appendChild(content);
+    tl.appendChild(row);
+
+    runningMin += step.duration;
+  });
+}
+
+// Save/Load
+function getSavedRecipes() { return JSON.parse(localStorage.getItem('sourdough-recipes') || '[]'); }
+function saveRecipes(arr)   { localStorage.setItem('sourdough-recipes', JSON.stringify(arr)); }
+
+function renderSavedList() {
+  const list = document.getElementById('saved-list');
+  list.innerHTML = '';
+  const recipes = getSavedRecipes();
+  if (recipes.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'text-xs text-gray-400';
+    empty.textContent = '保存済みレシピはありません';
+    list.appendChild(empty);
+    return;
+  }
+  recipes.forEach((r, idx) => {
+    const row = document.createElement('div');
+    row.className = 'saved-recipe flex items-center gap-2 px-2 py-2 rounded cursor-pointer border border-gray-100';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'flex-1 text-sm text-gray-700';
+    nameEl.textContent = r.name;
+
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'text-xs text-amber-600 hover:text-amber-800 px-2 py-1 rounded';
+    loadBtn.textContent = '読込';
+    loadBtn.setAttribute('aria-label', r.name + 'を読み込む');
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded';
+    delBtn.textContent = '削除';
+    delBtn.setAttribute('aria-label', r.name + 'を削除');
+
+    row.appendChild(nameEl);
+    row.appendChild(loadBtn);
+    row.appendChild(delBtn);
+    list.appendChild(row);
+
+    loadBtn.addEventListener('click', () => loadRecipe(r));
+    delBtn.addEventListener('click', () => {
+      const all = getSavedRecipes();
+      all.splice(idx, 1);
+      saveRecipes(all);
+      renderSavedList();
+    });
+  });
+}
+
+function loadRecipe(r) {
+  document.getElementById('flour-weight').value = r.flour;
+  document.querySelector(`input[name="flour-type"][value="${r.flourType}"]`).checked = true;
+  document.querySelector(`input[name="starter-activity"][value="${r.activity}"]`).checked = true;
+  document.querySelector(`input[name="target-crumb"][value="${r.crumb}"]`).checked = true;
+  document.getElementById('temp-slider').value = r.temp;
+  if (r.startTime) document.getElementById('start-time').value = r.startTime;
+  compute();
+}
+
+document.getElementById('save-recipe').addEventListener('click', () => {
+  const name = document.getElementById('recipe-name').value.trim();
+  if (!name) return;
+  const { flour, flourType, activity, crumb, temp } = getInputs();
+  const startTime = document.getElementById('start-time').value;
+  const all = getSavedRecipes();
+  all.unshift({ name, flour, flourType, activity, crumb, temp, startTime });
+  saveRecipes(all.slice(0, 10));
+  document.getElementById('recipe-name').value = '';
+  renderSavedList();
+});
+
+// Listeners
+['flour-weight','start-time'].forEach(id => {
+  document.getElementById(id).addEventListener('input', compute);
+});
+document.getElementById('temp-slider').addEventListener('input', compute);
+['flour-type','starter-activity','target-crumb'].forEach(name => {
+  document.querySelectorAll(`input[name="${name}"]`).forEach(el => {
+    el.addEventListener('change', compute);
+  });
+});
+
+compute();
+renderSavedList();
+</script>
+</body>
+</html>
